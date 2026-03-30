@@ -10,16 +10,16 @@ import { motion, AnimatePresence } from "framer-motion";
 
 // ── Agent Live Execution Logs (Mock Stream) ──
 const AGENT_MESSAGES = [
-  "INITIALIZING: Aegis Protocol v4.0",
-  "SCANNING: SPL Token Liquidity Pools...",
-  "DETECTED: JUP/USDC Volatility Spike (+4.2%)",
-  "ANALYZING: Orderbook Depth across Jupiter & Orca",
-  "STATUS: Standby. Awaiting capital allocation.",
-  "VERIFYING: Cold Storage Signatures... OK",
-  "GUARD: Max Drawdown parameter locked at 15%",
-  "ROUTING: Establishing secure CPI proxy layer",
-  "PING: Solana Mainnet-Beta 400ms latency",
-  "EXECUTION: Optimal routes cached."
+  "SYSTEM_BOOT: Aegis Defense Matrix v4.0 Online",
+  "HANDSHAKE: Establishing secure encrypted channel...",
+  "NODE_SYNC: Solana Mainnet-Beta RPC connection established.",
+  "SCANNING: Monitoring SPL Token Liquidity Pools...",
+  "THREAT_ASSESSMENT: Background volatility index normal.",
+  "PROTOCOL: Standing by for user delegation...",
+  "GUARD_RAIL: Max Drawdown parameter locked at 15%",
+  "ROUTING: Jupiter v6 pre-flight checks verified.",
+  "PING: Execution latency < 400ms",
+  "CORE: Awaiting capital injection to begin autonomous trading."
 ];
 
 type TxState = 'idle' | 'awaiting_signature' | 'broadcasting' | 'confirming' | 'success' | 'error';
@@ -42,6 +42,11 @@ export default function VaultPage() {
   
   const [logs, setLogs] = useState<string[]>([AGENT_MESSAGES[0]]);
   const logEndRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Simulated Matrix Log Stream
   useEffect(() => {
@@ -101,14 +106,14 @@ export default function VaultPage() {
     return () => { connection.removeAccountChangeListener(id); };
   }, [connected, publicKey, connection]);
 
-  const fetchAgentBalance = async (address: string) => {
+  async function fetchAgentBalance(address: string) {
     try {
       const lamports = await connection.getBalance(new PublicKey(address));
       setVaultBalance(lamports / LAMPORTS_PER_SOL);
     } catch (e) {
       console.error("Failed to fetch agent balance", e);
     }
-  };
+  }
 
   const copyToClipboard = () => {
     if (!agentAddress) return;
@@ -233,7 +238,13 @@ export default function VaultPage() {
             <Link href="/feeds" className="hover:text-white transition-colors">Social Feeds</Link>
           </div>
         </div>
-        <WalletMultiButton />
+        <div className="flex items-center gap-4">
+          {mounted && (
+            <div className="wallet-btn-wrapper custom-wallet-btn">
+              <WalletMultiButton />
+            </div>
+          )}
+        </div>
       </header>
 
       <main className="container mx-auto px-4 py-12 max-w-7xl relative z-10">
@@ -430,16 +441,21 @@ export default function VaultPage() {
 
                 {/* Terminal Output */}
                 <div className="p-5 flex-1 min-h-[400px] max-h-[600px] overflow-y-auto font-mono text-[11px] sm:text-xs leading-relaxed custom-scrollbar">
-                  <div className="text-gray-600 mb-4 whitespace-pre">
-{`    __                              _        
-   / /   ___ _   _____  ____  ___  (_)  __
-  / /   / _ \\ | / / _ \\/ ___/ / _ \\|/ |/_/
- / /___/  __/ |/ /  __/ /    /  __/>  <   
-/_____/\\___/|___/\\___/_/    /\\___/_/|_|   
-========================================
+                  <div className="text-gray-600 mb-6 bg-gray-900/30 p-4 rounded-lg border border-white/5 shadow-inner hidden md:block">
+<pre className="font-mono text-green-500/20 leading-none">
+{`██╗     ███████╗██╗   ██╗███████╗██████╗ ██╗██╗  ██╗
+██║     ██╔════╝██║   ██║██╔════╝██╔══██╗██║╚██╗██╔╝
+██║     █████╗  ██║   ██║█████╗  ██████╔╝██║ ╚███╔╝ 
+██║     ██╔══╝  ╚██╗ ██╔╝██╔══╝  ██╔══██╗██║ ██╔██╗ 
+███████╗███████╗ ╚████╔╝ ███████╗██║  ██║██║██╔╝ ██╗
+╚══════╝╚══════╝  ╚═══╝  ╚══════╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝`}
+</pre>
+                  </div>
+                  <div className="text-green-500/60 font-bold mb-4 tracking-widest break-words whitespace-pre-wrap">
+==================================================
 [AUTH] SECURE TERMINAL CONNECTION ESTABLISHED
-[AUTH] WALLET PK: ${publicKey?.toBase58()}
-========================================`}
+[AUTH] WALLET PK: {publicKey ? publicKey.toBase58() : "UNAUTHORIZED"}
+==================================================
                   </div>
                   
                   <div className="space-y-2">
