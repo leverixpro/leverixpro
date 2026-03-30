@@ -24,7 +24,6 @@ build/
 # ─── AI Agent Internal Files (not for public) ───────────────────────
 AGENTS.md
 CLAUDE.md
-skills.md
 
 # ─── VPS / Railway Deployment Config ────────────────────────────────
 railway.toml
