@@ -27,19 +27,19 @@ type TxState = 'idle' | 'awaiting_signature' | 'broadcasting' | 'confirming' | '
 export default function VaultPage() {
   const { connected, publicKey, sendTransaction } = useWallet();
   const { connection } = useConnection();
-  
+
   const [balance, setBalance] = useState<number | null>(null);
   const [vaultBalance, setVaultBalance] = useState<number>(0);
   const [agentAddress, setAgentAddress] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  
+
   const [depositAmount, setDepositAmount] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [activeTab, setActiveTab] = useState<"deposit" | "withdraw">("deposit");
-  
+
   const [txState, setTxState] = useState<TxState>('idle');
   const [txError, setTxError] = useState("");
-  
+
   const [logs, setLogs] = useState<string[]>([AGENT_MESSAGES[0]]);
   const logEndRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
@@ -69,21 +69,31 @@ export default function VaultPage() {
 
   // Fetch real SOL balance and Agent Data
   useEffect(() => {
-    if (!connected || !publicKey) { 
+    if (!connected || !publicKey) {
       setBalance(null);
       setAgentAddress(null);
-      return; 
+      return;
     }
-    
+
+    let listenerId: number | null = null;
+
     const fetchBalance = async () => {
-      const lamports = await connection.getBalance(publicKey);
-      setBalance(lamports / LAMPORTS_PER_SOL);
+      try {
+        const lamports = await connection.getBalance(publicKey);
+        setBalance(lamports / LAMPORTS_PER_SOL);
+      } catch (e) {
+        console.warn("RPC getBalance failed:", e);
+      }
     };
     fetchBalance();
-    
-    const id = connection.onAccountChange(publicKey, (info) => {
-      setBalance(info.lamports / LAMPORTS_PER_SOL);
-    });
+
+    try {
+      listenerId = connection.onAccountChange(publicKey, (info) => {
+        setBalance(info.lamports / LAMPORTS_PER_SOL);
+      });
+    } catch (e) {
+      console.warn("onAccountChange listener failed (WS unsupported):", e);
+    }
 
     const initAgent = async () => {
       try {
@@ -103,7 +113,11 @@ export default function VaultPage() {
     };
     initAgent();
 
-    return () => { connection.removeAccountChangeListener(id); };
+    return () => {
+      if (listenerId !== null) {
+        try { connection.removeAccountChangeListener(listenerId); } catch (_) {}
+      }
+    };
   }, [connected, publicKey, connection]);
 
   async function fetchAgentBalance(address: string) {
@@ -127,7 +141,7 @@ export default function VaultPage() {
   const handleDeposit = async () => {
     const amt = parseFloat(depositAmount);
     if (isNaN(amt) || amt <= 0 || !balance || amt > balance || !agentAddress || !publicKey) return;
-    
+
     try {
       setTxState('awaiting_signature');
       const transaction = new Transaction().add(
@@ -137,18 +151,18 @@ export default function VaultPage() {
           lamports: amt * LAMPORTS_PER_SOL,
         })
       );
-      
+
       const signature = await sendTransaction(transaction, connection);
       setTxState('broadcasting');
-      
+
       await connection.confirmTransaction(signature, 'processed');
       setTxState('success');
-      
+
       setDepositAmount("");
       fetchAgentBalance(agentAddress);
-      
+
       setLogs(prev => [...prev, `[SYSTEM] DEPOSIT DETECTED: +${amt} SOL. Agent capital augmented.`]);
-      
+
       setTimeout(() => setTxState('idle'), 3000);
     } catch (e: any) {
       console.error(e);
@@ -168,7 +182,7 @@ export default function VaultPage() {
         body: JSON.stringify({ walletAddress: publicKey.toBase58() })
       });
       const res = await req.json();
-      
+
       if (res.success) {
         setTxState('success');
         setWithdrawAmount("");
@@ -213,7 +227,7 @@ export default function VaultPage() {
       case 'error':
         return (
           <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="text-center py-2">
-            <div className="text-red-400 text-sm font-semibold flex items-center justify-center gap-2 mb-1"><Shield size={16}/> Execution Failed</div>
+            <div className="text-red-400 text-sm font-semibold flex items-center justify-center gap-2 mb-1"><Shield size={16} /> Execution Failed</div>
             <p className="text-xs text-red-400/70">{txError}</p>
           </motion.div>
         );
@@ -250,9 +264,9 @@ export default function VaultPage() {
       </header>
 
       <main className="container mx-auto px-4 py-12 max-w-7xl relative z-10">
-        
+
         {/* Dynamic Header */}
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}
           className="mb-12 text-center"
         >
@@ -268,7 +282,7 @@ export default function VaultPage() {
 
         {!connected ? (
           /* Disconnected State */
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}
             className="flex flex-col items-center justify-center py-10"
           >
@@ -286,14 +300,14 @@ export default function VaultPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
             {/* Left: Custodial Operations Panel */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1, duration: 0.5 }}
               className="lg:col-span-5 space-y-6"
             >
               {/* Agent Identity Card */}
               <div className="glass-card p-6 border border-white/10 bg-black/60 relative overflow-hidden group">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-green-500/10 rounded-full blur-3xl -mr-10 -mt-10 transition-all group-hover:bg-green-500/20"></div>
-                
+
                 <div className="flex justify-between items-start mb-6">
                   <div>
                     <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-widest flex items-center gap-2">
@@ -310,8 +324,8 @@ export default function VaultPage() {
                     <p className="text-[10px] text-gray-500 uppercase tracking-wider mb-1">Public Deposit Address</p>
                     <p className="text-white font-mono text-xs sm:text-sm tracking-widest">{agentAddress ? `${agentAddress.slice(0, 12)}...${agentAddress.slice(-12)}` : "INITIALIZING_NODE..."}</p>
                   </div>
-                  <button 
-                    onClick={copyToClipboard} 
+                  <button
+                    onClick={copyToClipboard}
                     disabled={!agentAddress}
                     className="p-2 bg-white/5 hover:bg-white/10 rounded-md transition-colors text-gray-400 hover:text-white"
                   >
@@ -352,7 +366,7 @@ export default function VaultPage() {
                 </div>
 
                 <AnimatePresence mode="wait">
-                  <motion.div 
+                  <motion.div
                     key={activeTab}
                     initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.2 }}
                     className="p-5"
@@ -383,7 +397,7 @@ export default function VaultPage() {
                         </div>
 
                         {txState === 'idle' || txState === 'error' ? (
-                          <button 
+                          <button
                             onClick={handleDeposit}
                             disabled={!depositAmount || isNaN(parseFloat(depositAmount))}
                             className="w-full bg-green-500 hover:bg-green-400 text-black font-bold uppercase tracking-widest py-4 rounded-md transition-all shadow-[0_0_20px_rgba(34,197,94,0.2)] disabled:opacity-50 disabled:shadow-none"
@@ -402,11 +416,11 @@ export default function VaultPage() {
                               <span className="text-gray-600">SOL</span>
                             </div>
                           </div>
-                          <p className="text-[10px] text-blue-400 mt-2 flex items-center gap-1"><Shield size={10}/> Full withdrawal resets agent operational limits.</p>
+                          <p className="text-[10px] text-blue-400 mt-2 flex items-center gap-1"><Shield size={10} /> Full withdrawal resets agent operational limits.</p>
                         </div>
-                        
+
                         {txState === 'idle' || txState === 'error' ? (
-                          <button 
+                          <button
                             onClick={handleWithdraw}
                             disabled={vaultBalance <= 0}
                             className="w-full bg-white hover:bg-gray-200 text-black font-bold uppercase tracking-widest py-4 rounded-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
@@ -422,12 +436,12 @@ export default function VaultPage() {
             </motion.div>
 
             {/* Right: Live Matrix Command Log */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2, duration: 0.5 }}
               className="lg:col-span-7"
             >
               <div className="glass-card border border-white/10 bg-[#0a0a0a] h-full flex flex-col overflow-hidden relative shadow-[inset_0_0_50px_rgba(0,0,0,0.8)]">
-                
+
                 {/* Terminal Header */}
                 <div className="bg-[#111] border-b border-white/5 py-3 px-5 flex items-center justify-between z-10">
                   <div className="flex items-center gap-3">
@@ -445,7 +459,7 @@ export default function VaultPage() {
                 <div className="p-5 flex-1 min-h-[400px] max-h-[600px] overflow-y-auto font-mono text-[11px] sm:text-xs leading-relaxed custom-scrollbar">
                   <div className="text-green-500/20 mb-6 bg-green-500/[0.02] p-4 rounded-lg border border-green-500/10 shadow-inner hidden md:block overflow-x-auto">
                     <pre className="font-mono text-[8px] sm:text-[9.5px] leading-none tracking-[0.1em] whitespace-pre">
-{`██╗     ███████╗██╗   ██╗███████╗██████╗ ██╗██╗  ██╗
+                      {`██╗     ███████╗██╗   ██╗███████╗██████╗ ██╗██╗  ██╗
 ██║     ██╔════╝██║   ██║██╔════╝██╔══██╗██║╚██╗██╔╝
 ██║     █████╗  ██║   ██║█████╗  ██████╔╝██║ ╚███╔╝ 
 ██║     ██╔══╝  ╚██╗ ██╔╝██╔══╝  ██╔══██╗██║ ██╔██╗ 
@@ -459,7 +473,7 @@ export default function VaultPage() {
 [AUTH] WALLET PK: {publicKey ? publicKey.toBase58() : "UNAUTHORIZED"}
 ==================================================
                   </div>
-                  
+
                   <div className="space-y-2">
                     {logs.map((log, index) => (
                       <div key={index} className="flex gap-3 text-gray-400">
