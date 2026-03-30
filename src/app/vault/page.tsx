@@ -3,8 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
-import { LAMPORTS_PER_SOL, SystemProgram, Transaction, PublicKey, Connection } from "@solana/web3.js";
-import { Shield, Zap, Lock, Activity, CheckCircle, Copy, Check, Terminal, CornerDownRight, Loader2, Cpu, ArrowRightLeft } from "lucide-react";
+import { LAMPORTS_PER_SOL, SystemProgram, Transaction, PublicKey } from "@solana/web3.js";
+import { Shield, Activity, CheckCircle, Copy, Check, Terminal, CornerDownRight, Loader2, Cpu, ArrowRightLeft } from "lucide-react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -40,7 +40,7 @@ export default function VaultPage() {
   const [txState, setTxState] = useState<TxState>('idle');
   const [txError, setTxError] = useState("");
 
-  const [logs, setLogs] = useState<string[]>([AGENT_MESSAGES[0]]);
+  const [logs, setLogs] = useState<Array<{msg: string; time: string}>>([{ msg: AGENT_MESSAGES[0], time: new Date().toISOString().substring(11,19) }]);
   const logEndRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -54,7 +54,8 @@ export default function VaultPage() {
     let i = 1;
     const interval = setInterval(() => {
       if (i < AGENT_MESSAGES.length) {
-        setLogs(prev => [...prev, AGENT_MESSAGES[i]]);
+        const time = new Date().toISOString().substring(11,19);
+        setLogs(prev => [...prev, { msg: AGENT_MESSAGES[i], time }]);
         i++;
       } else {
         clearInterval(interval);
@@ -161,7 +162,7 @@ export default function VaultPage() {
       setDepositAmount("");
       fetchAgentBalance(agentAddress);
 
-      setLogs(prev => [...prev, `[SYSTEM] DEPOSIT DETECTED: +${amt} SOL. Agent capital augmented.`]);
+      setLogs(prev => [...prev, { msg: `[SYSTEM] DEPOSIT DETECTED: +${amt} SOL. Agent capital augmented.`, time: new Date().toISOString().substring(11,19) }]);
 
       setTimeout(() => setTxState('idle'), 3000);
     } catch (e: any) {
@@ -187,7 +188,7 @@ export default function VaultPage() {
         setTxState('success');
         setWithdrawAmount("");
         fetchAgentBalance(agentAddress);
-        setLogs(prev => [...prev, `[SYSTEM] WITHDRAWAL EXECUTED: All operational capital returned to owner.`]);
+        setLogs(prev => [...prev, { msg: `[SYSTEM] WITHDRAWAL EXECUTED: All operational capital returned to owner.`, time: new Date().toISOString().substring(11,19) }]);
         setTimeout(() => setTxState('idle'), 3000);
       } else {
         throw new Error(res.error);
@@ -200,39 +201,41 @@ export default function VaultPage() {
     }
   };
 
-  const TxStatusDisplay = () => {
-    switch (txState) {
-      case 'idle': return null;
-      case 'awaiting_signature':
-        return (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-center gap-3 text-blue-400 py-3">
-            <Loader2 className="animate-spin" size={18} />
-            <span className="text-sm font-semibold tracking-wide">Awaiting Phantom Signature...</span>
-          </motion.div>
-        );
-      case 'broadcasting':
-        return (
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-center gap-3 text-yellow-400 py-3">
-            <Activity className="animate-pulse" size={18} />
-            <span className="text-sm font-semibold tracking-wide">Broadcasting to Solana Network...</span>
-          </motion.div>
-        );
-      case 'success':
-        return (
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex items-center justify-center gap-2 text-green-400 py-3">
-            <CheckCircle size={18} />
-            <span className="text-sm font-semibold tracking-wide">Transaction Confirmed!</span>
-          </motion.div>
-        );
-      case 'error':
-        return (
-          <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="text-center py-2">
-            <div className="text-red-400 text-sm font-semibold flex items-center justify-center gap-2 mb-1"><Shield size={16} /> Execution Failed</div>
-            <p className="text-xs text-red-400/70">{txError}</p>
-          </motion.div>
-        );
-    }
-  };
+// ── Transaction Status Display (outside component to avoid re-creation on render) ──
+function TxStatusDisplay({ txState, txError }: { txState: string; txError: string }) {
+  switch (txState) {
+    case 'idle': return null;
+    case 'awaiting_signature':
+      return (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-center gap-3 text-blue-400 py-3">
+          <Loader2 className="animate-spin" size={18} />
+          <span className="text-sm font-semibold tracking-wide">Awaiting Phantom Signature...</span>
+        </motion.div>
+      );
+    case 'broadcasting':
+      return (
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-center gap-3 text-yellow-400 py-3">
+          <Activity className="animate-pulse" size={18} />
+          <span className="text-sm font-semibold tracking-wide">Broadcasting to Solana Network...</span>
+        </motion.div>
+      );
+    case 'success':
+      return (
+        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex items-center justify-center gap-2 text-green-400 py-3">
+          <CheckCircle size={18} />
+          <span className="text-sm font-semibold tracking-wide">Transaction Confirmed!</span>
+        </motion.div>
+      );
+    case 'error':
+      return (
+        <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="text-center py-2">
+          <div className="text-red-400 text-sm font-semibold flex items-center justify-center gap-2 mb-1"><Shield size={16} /> Execution Failed</div>
+          <p className="text-xs text-red-400/70">{txError}</p>
+        </motion.div>
+      );
+    default: return null;
+  }
+}
 
   return (
     <div className="min-h-screen pb-20 overflow-hidden">
@@ -404,7 +407,7 @@ export default function VaultPage() {
                           >
                             Execute Deposit
                           </button>
-                        ) : <TxStatusDisplay />}
+                        ) : <TxStatusDisplay txState={txState} txError={txError} />}
                       </div>
                     ) : (
                       <div className="space-y-5">
@@ -427,7 +430,7 @@ export default function VaultPage() {
                           >
                             Harvest Total Capital
                           </button>
-                        ) : <TxStatusDisplay />}
+                        ) : <TxStatusDisplay txState={txState} txError={txError} />}
                       </div>
                     )}
                   </motion.div>
@@ -477,11 +480,11 @@ export default function VaultPage() {
                   <div className="space-y-2">
                     {logs.map((log, index) => (
                       <div key={index} className="flex gap-3 text-gray-400">
-                        <span className="text-gray-600 shrink-0">[{new Date().toISOString().substring(11,19)}]</span>
+                        <span className="text-gray-600 shrink-0">[{log.time}]</span>
                         <div className="flex gap-2">
                           <CornerDownRight size={12} className="text-green-500/50 mt-1 shrink-0" />
-                          <span className={log.includes("DEPOSIT") || log.includes("WITHDRAWAL") ? "text-green-400 font-bold" : "text-gray-300"}>
-                            {log}
+                          <span className={log.msg.includes("DEPOSIT") || log.msg.includes("WITHDRAWAL") ? "text-green-400 font-bold" : "text-gray-300"}>
+                            {log.msg}
                           </span>
                         </div>
                       </div>
