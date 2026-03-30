@@ -443,15 +443,14 @@ export default function VaultPage() {
 
                 {/* Terminal Output */}
                 <div className="p-5 flex-1 min-h-[400px] max-h-[600px] overflow-y-auto font-mono text-[11px] sm:text-xs leading-relaxed custom-scrollbar">
-                  <div className="text-gray-600 mb-6 bg-green-500/[0.02] p-4 sm:p-6 rounded-lg border border-green-500/10 shadow-inner hidden md:block overflow-x-auto">
-                    <pre className="font-mono text-green-500/30 text-[10px] leading-[1.2] tracking-tighter">
-{`
-    __    _______    ________  _______  ____  __
-   / /   / ____/ |  / / ____/ / __  / / / / |/ /
-  / /   / __/  | | / / __/   / /_/ / / /  |  / 
- / /___/ /___  | |/ / /___  / _, _/ / /  /  |  
-/_____/_____/  |___/_____/ /_/ |_| /_/  /_/|_| 
-`}
+                  <div className="text-green-500/20 mb-6 bg-green-500/[0.02] p-4 rounded-lg border border-green-500/10 shadow-inner hidden md:block overflow-x-auto">
+                    <pre className="font-mono text-[8px] sm:text-[9.5px] leading-none tracking-[0.1em] whitespace-pre">
+{`██╗     ███████╗██╗   ██╗███████╗██████╗ ██╗██╗  ██╗
+██║     ██╔════╝██║   ██║██╔════╝██╔══██╗██║╚██╗██╔╝
+██║     █████╗  ██║   ██║█████╗  ██████╔╝██║ ╚███╔╝ 
+██║     ██╔══╝  ╚██╗ ██╔╝██╔══╝  ██╔══██╗██║ ██╔██╗ 
+███████╗███████╗ ╚████╔╝ ███████╗██║  ██║██║██╔╝ ██╗
+╚══════╝╚══════╝  ╚═══╝  ╚══════╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝`}
                     </pre>
                   </div>
                   <div className="text-green-500/60 font-bold mb-4 tracking-widest break-words whitespace-pre-wrap">
