@@ -1,0 +1,181 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #050505;
+  --color-foreground: #ededed;
+  --color-primary: #1e1e1e;
+  --color-secondary: #2d2d2d;
+  --color-accent: #ffffff;
+}
+
+@layer base {
+  body {
+    background-color: #040404;
+    color: var(--color-foreground);
+
+    /* --- Global Wallet Button Tweak --- */
+    --wallet-btn-bg: #ffffff;
+    --wallet-btn-active: #f3f4f6;
+    --wallet-text-color: #000000;
+    /*
+      Dark Marble — Nero / Black Marquina aesthetic.
+      Multiple layered gradients simulate real marble veins:
+        1. Primary diagonal sweep vein (~110 deg) — wide white streak
+        2. Counter-diagonal secondary veins (~67 deg) — finer hairlines
+        3. Tertiary accent vein (~142 deg) — subtle cross-grain
+        4. Fine marble grain texture (repeating diagonal)
+        5. Deep radial shadow pools for dimensional depth
+    */
+    background-image:
+      /* ── Vein 1: Wide sweeping primary diagonal ─────────────────── */
+      linear-gradient(
+        110deg,
+        transparent 0%, transparent 25%,
+        rgba(255,255,255,0.020) 25.5%, rgba(255,255,255,0.032) 27%,
+        rgba(255,255,255,0.020) 27.5%, transparent 28.5%,
+        transparent 56%, rgba(255,255,255,0.012) 56.5%,
+        rgba(255,255,255,0.020) 57.5%, rgba(255,255,255,0.012) 58%,
+        transparent 59%
+      ),
+      /* ── Vein 2: Counter-diagonal hairlines ─────────────────────── */
+      linear-gradient(
+        67deg,
+        transparent 0%, transparent 13%,
+        rgba(255,255,255,0.014) 13.5%, rgba(255,255,255,0.022) 15.5%,
+        rgba(255,255,255,0.012) 16.5%, transparent 18%,
+        transparent 42%, rgba(255,255,255,0.009) 42.5%,
+        rgba(255,255,255,0.015) 43.5%, transparent 45%,
+        transparent 72%, rgba(255,255,255,0.007) 72.5%,
+        rgba(255,255,255,0.011) 73.5%, transparent 75%
+      ),
+      /* ── Vein 3: Tertiary cross-grain accent ────────────────────── */
+      linear-gradient(
+        143deg,
+        transparent 0%, transparent 37%,
+        rgba(255,255,255,0.009) 37.5%, rgba(255,255,255,0.014) 39%,
+        transparent 40.5%, transparent 77%,
+        rgba(255,255,255,0.007) 77.5%, rgba(255,255,255,0.010) 79%,
+        transparent 80.5%
+      ),
+      /* ── Fine marble grain texture ───────────────────────────────── */
+      repeating-linear-gradient(
+        48deg,
+        rgba(255,255,255,0.004) 0px, rgba(255,255,255,0.004) 1px,
+        transparent 1px, transparent 18px
+      ),
+      /* ── Radial depth shadow pools ───────────────────────────────── */
+      radial-gradient(ellipse 80% 60% at 10% 5%,  rgba(6,6,6,0.85) 0%, transparent 65%),
+      radial-gradient(ellipse 65% 80% at 88% 92%, rgba(4,4,4,0.90) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 55% 45%, rgba(8,8,8,0.40) 0%, transparent 100%);
+
+    background-attachment: fixed;
+    background-size: 100% 100%;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* ── Premium Phantom-Style Wallet Button ── */
+.custom-wallet-btn .wallet-adapter-button {
+  background: linear-gradient(135deg, rgba(30,12,60,0.95) 0%, rgba(10,5,25,0.98) 100%);
+  color: #fff;
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  border-radius: 0.875rem;
+  height: 44px;
+  padding: 0 20px;
+  border: 1px solid rgba(153, 69, 255, 0.35);
+  box-shadow: 0 0 0 1px rgba(153,69,255,0.1), 0 4px 20px rgba(153,69,255,0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+  transition: all 0.25s ease;
+  backdrop-filter: blur(12px);
+}
+.custom-wallet-btn .wallet-adapter-button:not([disabled]):hover {
+  background: linear-gradient(135deg, rgba(50,22,90,0.98) 0%, rgba(20,8,45,0.99) 100%);
+  border-color: rgba(153, 69, 255, 0.7);
+  box-shadow: 0 0 0 1px rgba(153,69,255,0.3), 0 0 25px rgba(153,69,255,0.35), inset 0 1px 0 rgba(255,255,255,0.08);
+  transform: translateY(-1px);
+}
+.custom-wallet-btn .wallet-adapter-button-trigger {
+  background: linear-gradient(135deg, rgba(30,12,60,0.95) 0%, rgba(10,5,25,0.98) 100%);
+}
+.custom-wallet-btn .wallet-adapter-button .wallet-adapter-button-start-icon {
+  display: flex;
+  align-items: center;
+}
+
+@layer utilities {
+  .text-shadow-hard {
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9), 0 4px 12px rgba(0, 0, 0, 0.6);
+  }
+  .text-shadow-glow {
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3), 0 0 20px rgba(255, 255, 255, 0.1);
+  }
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-33.333%); }
+}
+
+.animate-marquee {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: marquee 25s linear infinite;
+}
+
+.perspective-1000 {
+  perspective: 1000px;
+}
+.rotate-3d {
+  transform: rotateX(15deg) rotateY(-15deg);
+}
+
+@layer components {
+  .glass-panel {
+    background-color: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 1rem;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  }
+  .glass-card {
+    background-color: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 0.75rem;
+    transition: all 0.3s ease;
+  }
+  .glass-card:hover {
+    border-color: rgba(255, 255, 255, 0.2);
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  .btn-primary {
+    background-color: #ffffff;
+    color: #000000;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+    transition: all 0.3s ease;
+  }
+  .btn-primary:hover {
+    box-shadow: 0 0 25px rgba(255, 255, 255, 0.6);
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #050505; 
+}
+::-webkit-scrollbar-thumb {
+  background: #2a2a2a; 
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #4a4a4a; 
+}
