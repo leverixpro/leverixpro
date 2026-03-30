@@ -40,12 +40,14 @@ export default function VaultPage() {
   const [txState, setTxState] = useState<TxState>('idle');
   const [txError, setTxError] = useState("");
 
-  const [logs, setLogs] = useState<Array<{msg: string; time: string}>>([{ msg: AGENT_MESSAGES[0], time: new Date().toISOString().substring(11,19) }]);
+  const [logs, setLogs] = useState<Array<{msg: string; time: string}>>([{ msg: AGENT_MESSAGES[0], time: "" }]);
   const logEndRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    // Set initial log timestamp on client only (avoids hydration mismatch)
+    setLogs([{ msg: AGENT_MESSAGES[0], time: new Date().toISOString().substring(11,19) }]);
   }, []);
 
   // Simulated Matrix Log Stream
@@ -283,8 +285,8 @@ function TxStatusDisplay({ txState, txError }: { txState: string; txError: strin
           </p>
         </motion.div>
 
-        {!connected ? (
-          /* Disconnected State */
+        {!(mounted && connected) ? (
+          /* Disconnected State — also shown during SSR to prevent hydration mismatch */
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}
             className="flex flex-col items-center justify-center py-10"
