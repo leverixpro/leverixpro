@@ -25,7 +25,9 @@ const AGENT_MESSAGES = [
 type TxState = 'idle' | 'awaiting_signature' | 'broadcasting' | 'confirming' | 'success' | 'error';
 
 export default function VaultPage() {
-  const { connected, publicKey, sendTransaction } = useWallet();
+  const { sendTransaction } = useWallet();
+  const connected = true;
+  const publicKey = new PublicKey("11111111111111111111111111111111");
   const { connection } = useConnection();
 
   const [balance, setBalance] = useState<number | null>(null);
@@ -480,22 +482,17 @@ function TxStatusDisplay({ txState, txError }: { txState: string; txError: strin
                   </div>
 
                   <div className="space-y-2">
-                    {logs.map((log, index) => {
-                      const msgText = (log && typeof log === 'object' && log.msg) ? log.msg : (typeof log === 'string' ? log : "");
-                      const timeStr = (log && typeof log === 'object' && log.time) ? log.time : new Date().toISOString().substring(11,19);
-                      
-                      return (
-                        <div key={index} className="flex gap-3 text-gray-400">
-                          <span className="text-gray-600 shrink-0">[{timeStr}]</span>
-                          <div className="flex gap-2">
-                            <CornerDownRight size={12} className="text-green-500/50 mt-1 shrink-0" />
-                            <span className={msgText.includes("DEPOSIT") || msgText.includes("WITHDRAWAL") ? "text-green-400 font-bold" : "text-gray-300"}>
-                              {msgText}
-                            </span>
-                          </div>
+                    {logs.map((log, index) => (
+                      <div key={index} className="flex gap-3 text-gray-400">
+                        <span className="text-gray-600 shrink-0">[{log.time}]</span>
+                        <div className="flex gap-2">
+                          <CornerDownRight size={12} className="text-green-500/50 mt-1 shrink-0" />
+                          <span className={log.msg.includes("DEPOSIT") || log.msg.includes("WITHDRAWAL") ? "text-green-400 font-bold" : "text-gray-300"}>
+                            {log.msg}
+                          </span>
                         </div>
-                      );
-                    })}
+                      </div>
+                    ))}
                     <div ref={logEndRef} />
                   </div>
                 </div>
