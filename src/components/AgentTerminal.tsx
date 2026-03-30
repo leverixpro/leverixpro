@@ -146,39 +146,39 @@ export function AgentTerminal({ onTokenDetect }: { onTokenDetect?: (token: strin
       setMessages(prev => [...prev, {
         id: (Date.now() + 3).toString(),
         role: "agent",
-        content: `⚡ **Execution Engine:** Routing ${payload.action} on ${payload.token} via Jupiter Aggregator... Please check your wallet.`
+        content: `⚡ **Execution Engine:** Delegating ${payload.action} on ${payload.token} to Agent Vault...`
       }]);
 
-      const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
-      const SOL_MINT = "So11111111111111111111111111111111111111112";
-      const isLong = payload.action?.toUpperCase() === "LONG" || payload.token === "SOL";
-      const inputMint = isLong ? USDC_MINT : SOL_MINT;
-      const outputMint = isLong ? SOL_MINT : USDC_MINT;
+      // Call backend trade execution API
+      const req = await fetch('/api/trade', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          walletAddress: publicKey.toString(),
+          action: payload.action || "LONG",
+          token: payload.token || "SOL",
+          leverage: payload.leverage || 5,
+          sizeUsd: payload.sizeUsd || 50,
+          takeProfit: payload.tp,
+          stopLoss: payload.sl,
+          collateral: `${payload.sizeUsd} USD`, // Record keeping
+        })
+      });
 
-      const amountRaw = (payload.sizeUsd || 50) * 10000; // Simulated micro amount logic
+      const res = await req.json();
 
-      const quoteResponse = await (await fetch(`https://quote-api.jup.ag/v6/quote?inputMint=${inputMint}&outputMint=${outputMint}&amount=${amountRaw}&slippageBps=50`)).json();
-      if (quoteResponse.error) throw new Error(quoteResponse.error);
+      if (!req.ok || res.error) {
+        throw new Error(res.error || res.message || "Execution failed in backend.");
+      }
 
-      const { swapTransaction } = await (await fetch('https://quote-api.jup.ag/v6/swap', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            quoteResponse,
-            userPublicKey: publicKey.toString(),
-            wrapAndUnwrapSol: true
-          })
-      })).json();
-
-      const swapTransactionBuf = Uint8Array.from(atob(swapTransaction), c => c.charCodeAt(0));
-      var transaction = VersionedTransaction.deserialize(swapTransactionBuf);
-      
-      const txid = await sendTransaction(transaction, connection);
+      const txid = res.data?.txSignature || "PENDING_EXECUTION";
 
       setMessages(prev => [...prev, {
         id: (Date.now() + 4).toString(),
         role: "agent",
-        content: `✅ **Swap Executed & Transaction Sent!**\n\nAction: **${payload.action} ${payload.token}**\nRoute: Jupiter v6 (Best Price)\nTxID: [\`${txid.substring(0, 8)}...\`](https://solscan.io/tx/${txid})\n\nAuto TP/SL matrix algorithm is now actively tracking this position.`
+        content: `✅ **Vault Swap Executed!**\n\nAction: **${payload.action} ${payload.token}**\nRoute: Jupiter v6 (Vault Key)\nTxID: [\`${txid.substring(0, 8)}...\`](https://solscan.io/tx/${txid})\n\nAuto TP/SL matrix algorithm is now actively tracking this position.`
       }]);
       
     } catch(e: any) {
@@ -186,7 +186,7 @@ export function AgentTerminal({ onTokenDetect }: { onTokenDetect?: (token: strin
       setMessages(prev => [...prev, {
         id: (Date.now() + 5).toString(),
         role: "agent",
-        content: `⚠️ **Failed to execute transaction:** ${e.message || "User rejected or insufficient balance."}`
+        content: `⚠️ **Failed to execute transaction:** ${e.message || "Agent Vault encountered an issue."}`
       }]);
     }
   };
