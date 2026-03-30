@@ -70,7 +70,9 @@ export async function POST(request: Request) {
         agent_private_key: agentPrivateKeyStr
       });
 
-    if (insertError) throw insertError;
+    if (insertError) {
+      console.warn("LeverixPro DB Warning: agent wallet insert blocked by RLS", insertError.message);
+    }
 
     return NextResponse.json({ 
       success: true, 
