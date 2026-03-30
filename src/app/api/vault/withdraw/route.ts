@@ -5,20 +5,25 @@ import bs58 from 'bs58';
 
 
 export async function POST(request: Request) {
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-  const connection = new Connection(
-    process.env.NEXT_PUBLIC_RPC_URL || 'https://api.mainnet-beta.solana.com',
-    'confirmed'
-  );
   try {
     const { walletAddress } = await request.json();
 
     if (!walletAddress) {
       return NextResponse.json({ error: 'Missing walletAddress' }, { status: 400 });
     }
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseKey || supabaseUrl.includes('your-project') || supabaseUrl.includes('your_supabase')) {
+       return NextResponse.json({ success: false, error: 'Database inactive (Missing Env)' });
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    const connection = new Connection(
+      process.env.NEXT_PUBLIC_RPC_URL || 'https://api.mainnet-beta.solana.com',
+      'confirmed'
+    );
 
     // 1. Fetch Agent Keys from Supabase
     const { data: agentData, error: fetchError } = await supabase
