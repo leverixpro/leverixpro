@@ -141,9 +141,11 @@ export default function VaultPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const MIN_DEPOSIT = 0.5; // Minimum deposit to cover fees and rent
+
   const handleDeposit = async () => {
     const amt = parseFloat(depositAmount);
-    if (isNaN(amt) || amt <= 0 || !balance || amt > balance || !agentAddress || !publicKey) return;
+    if (isNaN(amt) || amt < MIN_DEPOSIT || !balance || amt > balance || !agentAddress || !publicKey) return;
 
     try {
       setTxState('awaiting_signature');
@@ -386,8 +388,14 @@ function TxStatusDisplay({ txState, txError }: { txState: string; txError: strin
                               value={depositAmount}
                               onChange={(e) => setDepositAmount(e.target.value)}
                               placeholder="0.00"
+                              min={MIN_DEPOSIT}
+                              step="0.1"
                               disabled={txState !== 'idle' && txState !== 'error'}
-                              className="w-full bg-black/80 border border-white/10 rounded-md px-4 py-4 text-white outline-none focus:border-green-500/50 transition-colors font-mono text-xl disabled:opacity-50"
+                              className={`w-full bg-black/80 border rounded-md px-4 py-4 text-white outline-none transition-colors font-mono text-xl disabled:opacity-50 ${
+                                depositAmount && parseFloat(depositAmount) < MIN_DEPOSIT && parseFloat(depositAmount) > 0
+                                  ? 'border-red-500/50 focus:border-red-500'
+                                  : 'border-white/10 focus:border-green-500/50'
+                              }`}
                             />
                             <div className="absolute right-4 flex items-center gap-3">
                               <span className="text-gray-500 font-bold">SOL</span>
@@ -399,12 +407,22 @@ function TxStatusDisplay({ txState, txError }: { txState: string; txError: strin
                               </button>
                             </div>
                           </div>
+                          {/* Min deposit helper */}
+                          {depositAmount && parseFloat(depositAmount) > 0 && parseFloat(depositAmount) < MIN_DEPOSIT ? (
+                            <p className="text-[10px] text-red-400 mt-1.5 flex items-center gap-1">
+                              ⚠ Minimum deposit is {MIN_DEPOSIT} SOL (covers transaction fees & rent exemption)
+                            </p>
+                          ) : (
+                            <p className="text-[10px] text-gray-600 mt-1.5">
+                              Min. {MIN_DEPOSIT} SOL · Covers network fees &amp; agent rent exemption
+                            </p>
+                          )}
                         </div>
 
                         {txState === 'idle' || txState === 'error' ? (
                           <button
                             onClick={handleDeposit}
-                            disabled={!depositAmount || isNaN(parseFloat(depositAmount))}
+                            disabled={!depositAmount || isNaN(parseFloat(depositAmount)) || parseFloat(depositAmount) < MIN_DEPOSIT}
                             className="w-full bg-green-500 hover:bg-green-400 text-black font-bold uppercase tracking-widest py-4 rounded-md transition-all shadow-[0_0_20px_rgba(34,197,94,0.2)] disabled:opacity-50 disabled:shadow-none"
                           >
                             Execute Deposit
