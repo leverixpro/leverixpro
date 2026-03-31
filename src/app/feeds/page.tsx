@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { MessageSquare, Heart, Share2, Copy, Image as ImageIcon, TrendingUp, TrendingDown, Minus, Loader2, X } from "lucide-react";
+import { MessageSquare, Heart, Share2, Copy, Image as ImageIcon, TrendingUp, TrendingDown, Minus, Loader2, X, Zap, Activity, BarChart2, AlertTriangle } from "lucide-react";
 import Link from "next/link";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
@@ -22,6 +22,15 @@ export default function FeedsPage() {
   const [postImage, setPostImage] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [selectedTrader, setSelectedTrader] = useState<any>(null);
+  const [marketData, setMarketData] = useState<any[]>([]);
+  const [marketLoading, setMarketLoading] = useState(true);
+  const [aiSignals] = useState([
+    { token: "SOL", signal: "STRONG BUY", confidence: 87, color: "green" },
+    { token: "BTC", signal: "BUY", confidence: 74, color: "green" },
+    { token: "ETH", signal: "NEUTRAL", confidence: 52, color: "yellow" },
+    { token: "WIF", signal: "SELL", confidence: 68, color: "red" },
+    { token: "JUP", signal: "WATCH", confidence: 61, color: "blue" },
+  ]);
 
   const MOCK_FEEDS = [
     {
@@ -100,6 +109,26 @@ export default function FeedsPage() {
     }
     return supabaseRef.current;
   };
+
+  // Fetch live market data for the AI Alpha Matrix panel
+  useEffect(() => {
+    const fetchMarket = async () => {
+      try {
+        const res = await fetch('/api/market');
+        const data = await res.json();
+        if (data.success && data.data) {
+          setMarketData(data.data);
+        }
+      } catch (e) {
+        console.warn('Market data fetch failed', e);
+      } finally {
+        setMarketLoading(false);
+      }
+    };
+    fetchMarket();
+    const interval = setInterval(fetchMarket, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const sentimentColor = (sentiment: string) => {
     switch (sentiment) {
@@ -224,34 +253,80 @@ export default function FeedsPage() {
 
       <main className="flex-1 container mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-4 gap-8">
 
-        {/* Left: OpenClaw Sentiment Panel */}
-        <div className="hidden lg:block lg:col-span-1 space-y-6">
-          <div className="glass-card p-6 border border-white/5 sticky top-28">
-            <h3 className="text-white font-bold mb-1 flex items-center gap-2 text-sm">
-              🔥 OpenClaw Sentinel
-            </h3>
-            <p className="text-xs text-gray-500 mb-5">Aggregate X/Twitter sentiment from top 100 Crypto KOLs.</p>
-            <div className="space-y-3">
-              {[
-                { name: "SOL", color: "from-purple-500 to-indigo-600", bull: 92 },
-                { name: "BTC", color: "from-orange-400 to-orange-600", bull: 78 },
-                { name: "ETH", color: "from-blue-400 to-blue-600", bull: 65 },
-                { name: "WIF", color: "from-orange-500 to-red-500", bull: 24 },
-                { name: "JUP", color: "from-green-400 to-emerald-600", bull: 51 },
-              ].map(t => (
-                <div key={t.name} className="space-y-1">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-5 h-5 rounded-full bg-gradient-to-r ${t.color} flex items-center justify-center text-[8px] text-white font-bold`}>{t.name.slice(0,1)}</div>
-                      <span className="text-xs text-gray-300 font-mono">${t.name}</span>
+        {/* Left: AI Alpha Matrix Panel */}
+        <div className="hidden lg:block lg:col-span-1 space-y-4">
+          {/* Live Market Prices */}
+          <div className="glass-card p-5 border border-white/5 sticky top-28 space-y-5">
+            <div className="flex items-center justify-between">
+              <h3 className="text-white font-bold text-sm flex items-center gap-2">
+                <BarChart2 size={14} className="text-blue-400" /> Live Market
+              </h3>
+              <span className="flex items-center gap-1.5 text-[10px] font-mono text-green-400">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" /> LIVE
+              </span>
+            </div>
+            <div className="space-y-2.5">
+              {marketLoading ? (
+                <div className="flex gap-2 items-center text-gray-600 text-xs py-2"><Loader2 size={12} className="animate-spin" /> Syncing...</div>
+              ) : marketData.slice(0, 3).map((t) => (
+                <div key={t.id} className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <img src={t.img} alt={t.id} className="w-5 h-5 rounded-full" onError={(e) => { e.currentTarget.src = ''; }} />
+                    <span className="text-xs text-gray-300 font-mono font-bold">{t.id}</span>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-xs font-mono text-white">${t.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}</div>
+                    <div className={`text-[10px] font-mono font-bold ${t.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {t.change >= 0 ? '+' : ''}{t.change.toFixed(2)}%
                     </div>
-                    <span className={`text-[10px] font-bold font-mono ${t.bull > 50 ? "text-green-400" : "text-red-400"}`}>
-                      {t.bull}% {t.bull > 50 ? "Bullish" : "Bearish"}
-                    </span>
                   </div>
-                  <div className="h-1 rounded-full bg-white/5 overflow-hidden">
-                    <div className={`h-full rounded-full bg-gradient-to-r ${t.bull > 50 ? "from-green-500 to-emerald-400" : "from-red-500 to-rose-400"}`} style={{ width: `${t.bull}%` }} />
+                </div>
+              ))}
+            </div>
+
+            <div className="border-t border-white/5 pt-4">
+              <h4 className="text-[10px] text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                <Activity size={10} /> OpenClaw AI Signals
+              </h4>
+              <div className="space-y-2.5">
+                {aiSignals.map((s) => (
+                  <div key={s.token} className="flex items-center justify-between gap-2">
+                    <span className="text-[10px] font-mono text-gray-400">${s.token}</span>
+                    <div className="flex-1 h-1 rounded-full bg-white/5 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full ${
+                          s.color === 'green' ? 'bg-green-500' :
+                          s.color === 'red' ? 'bg-red-500' :
+                          s.color === 'blue' ? 'bg-blue-500' : 'bg-yellow-500'
+                        }`}
+                        style={{ width: `${s.confidence}%` }}
+                      />
+                    </div>
+                    <span className={`text-[9px] font-bold font-mono w-16 text-right ${
+                      s.color === 'green' ? 'text-green-400' :
+                      s.color === 'red' ? 'text-red-400' :
+                      s.color === 'blue' ? 'text-blue-400' : 'text-yellow-400'
+                    }`}>{s.signal}</span>
                   </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="border-t border-white/5 pt-4 space-y-2">
+              <h4 className="text-[10px] text-gray-500 uppercase tracking-widest mb-3 flex items-center gap-2">
+                <AlertTriangle size={10} /> Whale Radar
+              </h4>
+              {[
+                { token: "SOL", size: "$2.4M", type: "BUY", ago: "4m ago" },
+                { token: "BTC", size: "$18.1M", type: "SELL", ago: "11m ago" },
+                { token: "ETH", size: "$5.7M", type: "BUY", ago: "23m ago" },
+              ].map((w, i) => (
+                <div key={i} className="flex items-center gap-2 text-[10px] font-mono">
+                  <Zap size={9} className={w.type === 'BUY' ? 'text-green-400' : 'text-red-400'} />
+                  <span className="text-gray-500">{w.ago}</span>
+                  <span className={`font-bold ml-auto ${w.type === 'BUY' ? 'text-green-400' : 'text-red-400'}`}>{w.type}</span>
+                  <span className="text-white">{w.size}</span>
+                  <span className="text-gray-500">{w.token}</span>
                 </div>
               ))}
             </div>

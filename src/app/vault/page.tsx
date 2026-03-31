@@ -472,11 +472,11 @@ function TxStatusDisplay({ txState, txError }: { txState: string; txError: strin
 ╚══════╝╚══════╝  ╚═══╝  ╚══════╝╚═╝  ╚═╝╚═╝╚═╝  ╚═╝`}
                     </pre>
                   </div>
-                  <div className="text-green-500/60 font-bold mb-4 tracking-widest break-words whitespace-pre-wrap">
-==================================================
-[AUTH] SECURE TERMINAL CONNECTION ESTABLISHED
-[AUTH] WALLET PK: {publicKey ? publicKey.toBase58() : "UNAUTHORIZED"}
-==================================================
+                  <div className="font-mono text-[10px] sm:text-xs text-green-500/60 font-bold mb-4 space-y-0.5">
+                    <div className="tracking-widest">{"=================================================="}</div>
+                    <div className="tracking-wide">{"[AUTH] SECURE TERMINAL CONNECTION ESTABLISHED"}</div>
+                    <div className="tracking-wide break-all">{"[AUTH] WALLET PK: "}<span className="text-green-400/80">{publicKey ? publicKey.toBase58() : "UNAUTHORIZED"}</span></div>
+                    <div className="tracking-widest">{"=================================================="}</div>
                   </div>
 
                   <div className="space-y-2">
