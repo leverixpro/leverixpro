@@ -289,43 +289,20 @@ export default function TradeDashboard() {
         <div className="xl:col-span-1 relative">
            
            {/* Terminal Container */}
-           <motion.div initial={{opacity: 0, x: 20}} animate={{opacity:1, x:0}} transition={{delay: 0.3}} className="h-full">
-              <AgentTerminal onTokenDetect={(token) => setCurrentToken(token)} />
+           <motion.div initial={{opacity: 0, x: 20}} animate={{opacity:1, x:0}} transition={{delay: 0.3}} className="h-full flex flex-col gap-3">
+              {/* Vault warning banner — only shows when vault is empty, doesn't block chat */}
+              {connected && !isInitializingVault && vaultBalance === 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center gap-3 bg-yellow-500/5 border border-yellow-500/20 rounded-xl px-4 py-3 text-xs"
+                >
+                  <Shield className="text-yellow-500 shrink-0" size={16} />
+                  <span className="text-yellow-400/80">Agent Vault unfunded. Chat freely for signals &amp; analysis.</span>
+                  <Link href="/vault" className="ml-auto text-yellow-400 font-bold border border-yellow-500/40 px-3 py-1 rounded hover:bg-yellow-500/10 transition-colors shrink-0">Fund Now</Link>
+                </motion.div>
+              )}
+              <AgentTerminal onTokenDetect={(token) => setCurrentToken(token)} vaultBalance={vaultBalance} />
            </motion.div>
-
-           {/* Onboarding Lock Overlay */}
-           <AnimatePresence>
-             {connected && !isInitializingVault && vaultBalance === 0 && (
-               <motion.div 
-                 initial={{ opacity: 0, backdropFilter: 'blur(0px)' }}
-                 animate={{ opacity: 1, backdropFilter: 'blur(10px)' }}
-                 className="absolute inset-0 z-20 bg-black/60 rounded-2xl flex flex-col items-center justify-center p-8 text-center border border-white/10"
-               >
-                 <div className="w-16 h-16 bg-blue-500/10 border border-blue-500/20 rounded-2xl flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(59,130,246,0.2)]">
-                   <Shield className="text-blue-400" size={30} />
-                 </div>
-                 <h3 className="text-2xl font-bold text-white mb-2 tracking-tight">Agent Standby Mode</h3>
-                 <p className="text-sm text-gray-400 mb-8 leading-relaxed">
-                   Your Custodial Agent Vault is currently unfunded (0 SOL). The Autonomous Copilot requires operating capital to propose and execute trades on your behalf.
-                 </p>
-                 
-                 <div className="w-full space-y-3 mb-8 text-left">
-                    <div className="bg-[#111] p-3 rounded-lg border border-green-500/20 flex items-center gap-3">
-                       <CheckCircle className="text-green-400" size={16}/>
-                       <span className="text-sm text-gray-300">Phase 1: Wallet Verification</span>
-                    </div>
-                    <div className="bg-blue-500/10 p-3 rounded-lg border border-blue-500/30 flex items-center gap-3">
-                       <div className="w-4 h-4 rounded-full border-2 border-blue-400 border-t-transparent animate-spin shrink-0"></div>
-                       <span className="text-sm text-white font-medium">Phase 2: Establish Agent Vault</span>
-                    </div>
-                 </div>
-
-                 <Link href="/vault" className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3.5 rounded-xl transition-all shadow-md text-sm uppercase tracking-wider">
-                   Deposit Capital to Un-Lock
-                 </Link>
-               </motion.div>
-             )}
-           </AnimatePresence>
         </div>
       </main>
     </div>

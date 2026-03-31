@@ -47,7 +47,7 @@ type Message = {
   executed?: boolean;
 };
 
-export function AgentTerminal({ onTokenDetect }: { onTokenDetect?: (token: string) => void }) {
+export function AgentTerminal({ onTokenDetect, vaultBalance }: { onTokenDetect?: (token: string) => void; vaultBalance?: number | null }) {
   const { publicKey, sendTransaction } = useWallet();
   const { connection } = useConnection();
   const [messages, setMessages] = useState<Message[]>([
@@ -135,6 +135,16 @@ export function AgentTerminal({ onTokenDetect }: { onTokenDetect?: (token: strin
         id: (Date.now() + 2).toString(),
         role: "agent",
         content: "⚠️ **Trade execution halted.** Please connect your Solana wallet to sign the transaction."
+      }]);
+      return;
+    }
+
+    // Block execution if vault has no funds
+    if (vaultBalance === 0 || vaultBalance === null || vaultBalance === undefined) {
+      setMessages(prev => [...prev, {
+        id: (Date.now() + 2).toString(),
+        role: "agent",
+        content: "🔒 **Agent Vault Unfunded.** Your custodial vault has 0 SOL. Please [deposit capital to the Vault](/vault) first so the agent can execute this trade on your behalf."
       }]);
       return;
     }
@@ -315,12 +325,18 @@ export function AgentTerminal({ onTokenDetect }: { onTokenDetect?: (token: strin
                              <button className="flex-1 py-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 font-semibold text-xs transition-colors border border-white/5">
                                Reject
                              </button>
-                             <button 
-                                onClick={() => executeProposal(msg.id, msg.payload!)}
-                                className="flex-2 w-[60%] py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-colors shadow-[0_0_15px_rgba(59,130,246,0.3)]"
-                             >
-                               Approve & Execute
-                             </button>
+                             {(vaultBalance === 0 || vaultBalance === null || vaultBalance === undefined) ? (
+                               <a href="/vault" className="flex-2 w-[60%] py-2.5 rounded-lg bg-yellow-600/20 hover:bg-yellow-600/30 text-yellow-400 border border-yellow-500/30 font-bold text-xs transition-colors text-center flex items-center justify-center gap-1">
+                                 🔒 Fund Vault to Execute
+                               </a>
+                             ) : (
+                               <button 
+                                  onClick={() => executeProposal(msg.id, msg.payload!)}
+                                  className="flex-2 w-[60%] py-2.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-colors shadow-[0_0_15px_rgba(59,130,246,0.3)]"
+                               >
+                                 Approve & Execute
+                               </button>
+                             )}
                           </div>
                         ) : (
                           <div className="w-full py-2 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 font-bold text-xs flex items-center justify-center gap-2">
